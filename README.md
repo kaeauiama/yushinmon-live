@@ -49,6 +49,37 @@ Firebase 側の設定（セキュリティルールと新規サインアップ�
 node tools/check-rules.js
 ```
 
+## GitHub Pages へのデプロイ
+
+このリポジトリは **public** で運用する（GitHub Free では Pages の公開に public が必要）。
+秘密情報を持たない設計なので、公開して問題ない（`docs/requirements.md` HC-1 / 2.5）。
+
+1. GitHub でリポジトリを作成する（README・.gitignore・LICENSE は**追加しない**）
+2. リモートを登録して push する
+
+```bash
+git remote add origin https://github.com/kaeauiama/yushinmon-live.git
+git push -u origin main
+```
+
+3. リポジトリの Settings → Pages で、Source を **Deploy from a branch**、
+   Branch を **main / (root)** にする
+4. 数分後に `https://kaeauiama.github.io/yushinmon-live/` が開くことを確認する
+5. `https://kaeauiama.github.io/yushinmon-live/admin/` でログインできることを確認する
+
+`.nojekyll` を置いてあるので Jekyll の処理は走らない。ビルド工程も無いので、
+**push した内容がそのまま公開物になる**。
+
+### 公開後に必ず確認すること
+
+```bash
+node tools/check-rules.js
+```
+
+**旧版のソース `sample/` は `.gitignore` で除外している。**
+管理者の個人メールアドレスを文字列分割で埋め込んだコードを含むため
+（難読化は保護ではない）。手元にだけ置くこと。
+
 ## 他団体で使う場合
 
 1. このリポジトリをフォークする
