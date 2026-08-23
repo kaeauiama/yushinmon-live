@@ -1,5 +1,5 @@
 {
-  "_comment": "firebase の値は旧リポジトリ（sample/）から引き継いだもの。プロジェクトを作り直した場合は差し替えること。staffEmail は M2 で作成する共有スタッフアカウントのアドレスに置き換えること（U-05）。",
+  "_comment": "この団体固有の設定。他団体で使う場合はこのファイルだけを書き換える（docs/requirements.md REQ-161）。apiKey は秘密情報ではなく、接続先を示す公開識別子。書き込みはセキュリティルールで守る（HC-8）。",
   "firebase": {
     "apiKey": "AIzaSyAn2uxdC8C8Hh91Y326Yw-L9boGDObf7dw",
     "authDomain": "yushinmon-live.firebaseapp.com",
