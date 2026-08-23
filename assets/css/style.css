@@ -1,0 +1,371 @@
+/*
+  視聴ページのスタイル。
+
+  HC-2: YouTube プレーヤーを覆う UI を置かない。
+  そのため、プレーヤーの縦横比は position:relative + position:absolute の
+  古典的な手法ではなく aspect-ratio で取る。プレーヤーのコンテナに
+  position:relative を持たせないことで、後から誰かがオーバーレイを
+  重ねにくい構造にしてある。tests/constraints.test.js がこれを検査する。
+
+  REQ-165: 配色はここの CSS 変数 1 箇所で差し替えられる。
+*/
+
+:root {
+  --color-bg: #f4f5f7;
+  --color-surface: #ffffff;
+  --color-text: #1b1d21;
+  --color-text-weak: #5b6270;
+  --color-border: #d8dce3;
+  --color-accent: #17603a;
+  --color-accent-soft: #e2efe8;
+  --color-live: #d93025;
+  --color-warn-bg: #fff4d6;
+  --color-warn-text: #6b4c00;
+  --color-warn-border: #e6c86a;
+  --content-width: 880px;
+  --radius: 3px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #16181c;
+    --color-surface: #21242a;
+    --color-text: #eceef2;
+    --color-text-weak: #a3abb8;
+    --color-border: #363b44;
+    --color-accent: #58c08a;
+    --color-accent-soft: #24382e;
+    --color-live: #ff6b5e;
+    --color-warn-bg: #3a3115;
+    --color-warn-text: #f2d98a;
+    --color-warn-border: #6b5a21;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/*
+  表示の出し分けは hidden 属性で行う。
+  .placeholder や .banner-action のように display を指定したクラスは、
+  ブラウザ既定の [hidden] { display: none } より詳細度が高く打ち消してしまうため、
+  ここで明示的に優先させる。これが無いと「隠したはずの枠が場所を取る」不具合になる。
+*/
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.45;
+  -webkit-text-size-adjust: 100%;
+}
+
+.wrap {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 8px 18px;
+}
+
+/* ---- ヘッダー ---- */
+
+.site-header {
+  background: var(--color-accent);
+  color: #fff;
+  padding: 7px 10px;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.event-title {
+  margin: 1px 0 0;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+/* ---- 本体 ---- */
+
+.court {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-top: 8px;
+}
+
+/* ---- コート切替タブ ---- */
+
+.court-tabs {
+  display: flex;
+  gap: 3px;
+  margin-bottom: 6px;
+  overflow-x: auto;
+}
+
+.court-tab {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 6px 12px;
+  min-height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text-weak);
+  cursor: pointer;
+}
+
+.court-tab[aria-selected="true"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.court-name {
+  margin: 0 0 5px;
+  font-size: 0.92rem;
+  color: var(--color-text-weak);
+  font-weight: 600;
+}
+
+/*
+  プレーヤー。position:relative を意図的に持たせない（HC-2）。
+*/
+.player-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.player-frame iframe,
+.player-frame > div {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+
+/* 配信前・終了時にプレーヤーの代わりに出す枠 */
+.placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  color: var(--color-text-weak);
+  font-size: 1rem;
+}
+
+/* ---- テロップ ---- */
+
+.headline-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  min-height: 24px;
+}
+
+.live-badge {
+  flex: none;
+  background: var(--color-live);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
+.headline {
+  font-size: 1rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.headline.is-paused {
+  color: var(--color-live);
+}
+
+.notice {
+  margin: 6px 0 0;
+  padding: 5px 7px;
+  background: var(--color-warn-bg);
+  color: var(--color-warn-text);
+  border: 1px solid var(--color-warn-border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
+/* ---- バナー ---- */
+
+.banner {
+  margin: 8px 0 0;
+  padding: 5px 7px;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+}
+
+.banner-warn {
+  background: var(--color-warn-bg);
+  color: var(--color-warn-text);
+  border: 1px solid var(--color-warn-border);
+}
+
+.banner-action {
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.banner-action button {
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-accent);
+  border: 0;
+  border-radius: var(--radius);
+  padding: 5px 14px;
+  cursor: pointer;
+}
+
+/* ---- プログラム表 ---- */
+
+.program {
+  margin-top: 10px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+.program-title {
+  margin: 0 0 4px;
+  font-size: 0.82rem;
+  color: var(--color-text-weak);
+  font-weight: 600;
+}
+
+.program-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.program-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--color-text-weak);
+  border-bottom: 1px solid var(--color-border);
+  padding: 2px 6px;
+}
+
+.program-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.program-col-time {
+  width: 5.5em;
+  white-space: nowrap;
+}
+
+.program-table tr.is-current td {
+  background: var(--color-accent-soft);
+  font-weight: 700;
+}
+
+/* 「いまここ」の目印。色だけに頼らず記号でも示す */
+.program-now {
+  display: inline-block;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 2px;
+  margin-right: 5px;
+  vertical-align: 1px;
+}
+
+/* ---- 直リンク・注意書き ---- */
+
+.direct {
+  margin: 7px 0 0;
+  font-size: 0.82rem;
+}
+
+.direct a {
+  color: var(--color-accent);
+}
+
+.cautions {
+  margin-top: 9px;
+  color: var(--color-text-weak);
+  font-size: 0.76rem;
+}
+
+.cautions p {
+  margin: 2px 0;
+}
+
+/* ---- 退避表示 ---- */
+
+.fatal {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 12px;
+  margin-top: 8px;
+}
+
+.fatal h2 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.fatal p {
+  margin: 4px 0;
+  font-size: 0.86rem;
+}
+
+.fatal-contact {
+  white-space: pre-wrap;
+}
+
+/* ---- フッター ---- */
+
+.site-footer {
+  border-top: 1px solid var(--color-border);
+  padding: 9px 12px 14px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-text-weak);
+}
+
+.site-footer a {
+  color: var(--color-accent);
+}
+
+.site-footer p {
+  margin: 0;
+}

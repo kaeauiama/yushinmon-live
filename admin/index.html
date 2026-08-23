@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>管理画面</title>
+    <link rel="stylesheet" href="../assets/css/style.css" />
+    <link rel="stylesheet" href="./admin.css" />
+    <!-- HC-6: JavaScript から .src への代入を行わないため、ここで読み込む -->
+    <script src="https://www.youtube.com/iframe_api" async></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1 class="site-title">管理画面</h1>
+      <p id="event-title" class="event-title"></p>
+    </header>
+
+    <main class="wrap">
+      <!-- ログイン（REQ-141 / REQ-142） -->
+      <section id="login" class="panel" hidden>
+        <h2 class="panel-title">ログイン</h2>
+        <p class="hint">
+          スタッフ用アカウント：<span id="login-account" class="mono"></span>
+        </p>
+        <label class="field">
+          <span class="field-label">パスワード</span>
+          <input id="password" type="password" autocomplete="current-password" />
+        </label>
+        <p id="login-error" class="error" hidden></p>
+        <button id="login-button" type="button" class="btn btn-primary btn-wide">ログインする</button>
+        <p class="hint">
+          一度ログインすると、この端末では次回から入力不要になります。<br />
+          大会前日までに済ませておいてください。
+        </p>
+      </section>
+
+      <!-- 管理本体 -->
+      <section id="console" hidden>
+        <!-- HC-7 のガード（REQ-166）。常時表示し、折りたためないようにする -->
+        <p class="public-warning">
+          ここに入力した内容は<strong>誰でも閲覧できます</strong>。<br />
+          選手名・所属・連絡先などの個人情報は入力しないでください。
+        </p>
+
+        <div class="panel">
+          <h2 class="panel-title">編集中のイベント</h2>
+          <p id="event-missing" class="error" hidden></p>
+          <label class="field">
+            <span class="field-label">配信中のイベント</span>
+            <select id="event-select"></select>
+          </label>
+          <button id="event-apply" type="button" class="btn btn-danger btn-wide">
+            選んだイベントを配信中にする
+          </button>
+          <p class="hint">
+            視聴ページに表示されるイベントが切り替わります。大会当日には触らないでください。
+          </p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">コート</h2>
+          <div id="admin-court-tabs" class="court-tabs"></div>
+          <label class="field">
+            <span class="field-label">コート名</span>
+            <input id="court-name" type="text" maxlength="40" autocomplete="off" />
+          </label>
+          <div class="court-actions">
+            <button id="court-add" type="button" class="btn btn-state">コートを追加</button>
+            <button id="court-remove" type="button" class="btn btn-danger">このコートを削除</button>
+          </div>
+          <p id="court-locked" class="field-status is-ng" hidden></p>
+          <p class="hint">
+            コートの追加・削除は、押した時点ですぐ反映されます。<br />
+            コート名の変更は「保存」を押すまで反映されません。
+          </p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">配信の状態</h2>
+          <div class="state-grid">
+            <button type="button" class="btn btn-state" data-state="before">配信前にする</button>
+            <button type="button" class="btn btn-state" data-state="live">配信中にする</button>
+            <button type="button" class="btn btn-state" data-state="paused">中断中にする</button>
+            <button type="button" class="btn btn-state" data-state="ended">終了にする</button>
+          </div>
+          <p class="hint">このボタンは押した時点ですぐ反映されます。保存は不要です。</p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">配信 URL</h2>
+          <label class="field">
+            <span class="field-label">本番の配信 URL</span>
+            <input
+              id="video-url"
+              type="url"
+              inputmode="url"
+              autocomplete="off"
+              placeholder="YouTube の URL を貼り付け"
+            />
+          </label>
+          <p id="video-url-status" class="field-status"></p>
+
+          <!-- 貼り間違いを目視で確認するためのプレビュー（REQ-144） -->
+          <div class="preview">
+            <div id="preview-frame" class="player-frame" hidden>
+              <div id="preview-mount"></div>
+            </div>
+            <div id="preview-empty" class="preview-empty">URL を貼るとここに映像が出ます</div>
+          </div>
+
+          <label class="field">
+            <span class="field-label">予備の配信 URL</span>
+            <input
+              id="backup-url"
+              type="url"
+              inputmode="url"
+              autocomplete="off"
+              placeholder="事前に用意した予備配信の URL"
+            />
+          </label>
+          <p id="backup-url-status" class="field-status"></p>
+
+          <button id="swap-button" type="button" class="btn btn-danger btn-wide">
+            予備 URL に切り替える
+          </button>
+          <p class="hint">本番と予備を入れ替えます。押した時点ですぐ反映されます。</p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">表示する文言</h2>
+          <label class="field">
+            <span class="field-label">テロップ</span>
+            <input id="headline" type="text" maxlength="200" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-label">配信前に出す文言</span>
+            <input id="scheduled-text" type="text" maxlength="100" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-label">アーカイブの URL（終了後に案内する場合）</span>
+            <input id="archive-url" type="url" inputmode="url" autocomplete="off" />
+          </label>
+          <p id="archive-url-status" class="field-status"></p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">プログラム</h2>
+          <button id="program-next" type="button" class="btn btn-primary btn-wide">
+            次の種目へ進む
+          </button>
+          <p class="hint">
+            視聴ページの「いま」の目印が 1 つ下がります。押した時点ですぐ反映されます。
+          </p>
+          <p id="program-locked" class="field-status is-ng" hidden></p>
+
+          <div id="program-rows" class="program-rows"></div>
+          <p id="program-empty" class="hint" hidden>まだ 1 行もありません。</p>
+
+          <button id="program-add" type="button" class="btn btn-state btn-wide">行を追加する</button>
+          <p class="hint">
+            行の追加・削除・並べ替え・文字の変更は「保存」を押すまで反映されません。<br />
+            時刻と内容の両方が空の行は、保存時に取り除かれます。
+          </p>
+        </div>
+
+        <details class="panel danger-zone">
+          <summary>めったに使わない操作</summary>
+          <p class="hint">
+            通常、配信の切り替えは視聴者の画面に自動で反映されます。<br />
+            <strong>下のボタンは、自動で切り替わらないという連絡が複数から来たときだけ</strong>
+            使ってください。全視聴者の画面が再読み込みされ、全画面表示が解除されます。
+          </p>
+          <button id="force-reload-button" type="button" class="btn btn-danger">
+            全員の画面を再読み込みする
+          </button>
+          <p class="hint">
+            端末を手放すときはログアウトしてください。次回はパスワードの入力が必要になります。
+          </p>
+          <button id="signout-button" type="button" class="btn btn-danger">ログアウトする</button>
+        </details>
+
+        <p id="console-error" class="error" hidden></p>
+      </section>
+    </main>
+
+    <!-- 保存バー（REQ-146 / REQ-147） -->
+    <div id="savebar" class="savebar" hidden>
+      <div class="savebar-status">
+        <span id="dirty-badge" class="dirty-badge" hidden>未保存</span>
+        <span id="saved-at" class="saved-at"></span>
+      </div>
+      <button id="save-button" type="button" class="btn btn-primary">保存</button>
+    </div>
+
+    <script type="module" src="./js/admin.js"></script>
+  </body>
+</html>

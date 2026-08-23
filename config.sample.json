@@ -1,0 +1,15 @@
+{
+  "_comment": "このファイルをコピーして config.json を作り、値を書き換えてください。団体固有の値はここだけに置きます（REQ-161）。",
+  "firebase": {
+    "apiKey": "YOUR_FIREBASE_API_KEY",
+    "authDomain": "YOUR_PROJECT.firebaseapp.com",
+    "databaseURL": "https://YOUR_PROJECT-default-rtdb.firebasedatabase.app",
+    "projectId": "YOUR_PROJECT",
+    "appId": "YOUR_APP_ID"
+  },
+  "firebaseSdkVersion": "10.12.2",
+  "staffEmail": "staff@YOUR_PROJECT.firebaseapp.com",
+  "siteTitle": "ライブ配信",
+  "officialSiteUrl": "",
+  "fallbackContact": "ご不明な点は大会本部までお問い合わせください。"
+}

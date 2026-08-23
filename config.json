@@ -1,0 +1,15 @@
+{
+  "_comment": "firebase の値は旧リポジトリ（sample/）から引き継いだもの。プロジェクトを作り直した場合は差し替えること。staffEmail は M2 で作成する共有スタッフアカウントのアドレスに置き換えること（U-05）。",
+  "firebase": {
+    "apiKey": "AIzaSyAn2uxdC8C8Hh91Y326Yw-L9boGDObf7dw",
+    "authDomain": "yushinmon-live.firebaseapp.com",
+    "databaseURL": "https://yushinmon-live.firebaseio.com",
+    "projectId": "yushinmon-live",
+    "appId": "1:263436073512:web:1d70979cf7671b3711531d"
+  },
+  "firebaseSdkVersion": "10.12.2",
+  "staffEmail": "yushinmon.bunkyo@gmail.com",
+  "siteTitle": "空手道勇心門 ライブ配信",
+  "officialSiteUrl": "",
+  "fallbackContact": "ご不明な点は大会本部までお問い合わせください。"
+}

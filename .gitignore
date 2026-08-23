@@ -1,0 +1,13 @@
+# 旧版（2021 年）のソース一式。
+# 管理者の個人メールアドレスを文字列分割で埋め込んだコードを含むため、
+# 公開リポジトリには入れない（docs/requirements.md HC-1）。
+# 参照したい場合は手元にだけ置くこと。
+sample/
+
+# Claude Code のローカル設定（環境依存）
+.claude/settings.local.json
+
+# OS / エディタ
+.DS_Store
+Thumbs.db
+*.swp

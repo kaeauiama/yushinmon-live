@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- REQ-110: 検索避け。URL を知っている人に配る運用のため -->
+    <meta name="robots" content="noindex, nofollow" />
+    <title>ライブ配信</title>
+    <link rel="stylesheet" href="./assets/css/style.css" />
+    <!--
+      YouTube IFrame Player API。
+      HC-6 のガードを単純に保つため、この API の読み込みだけは HTML 側で行い、
+      JavaScript 側では一切 .src への代入を行わない。
+    -->
+    <script src="https://www.youtube.com/iframe_api" async></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <h1 id="site-title" class="site-title">ライブ配信</h1>
+      <p id="event-title" class="event-title"></p>
+    </header>
+
+    <main class="wrap">
+      <!-- 通信状態・鮮度のお知らせ（REQ-124 / REQ-132） -->
+      <p id="staleness-banner" class="banner banner-warn" hidden></p>
+
+      <!-- 通常表示 -->
+      <section id="court" class="court" hidden>
+        <!-- REQ-107: 複数コートはタブで切り替える。同時再生はしない -->
+        <div id="court-tabs" class="court-tabs" role="tablist" hidden></div>
+        <h2 id="court-name" class="court-name"></h2>
+
+        <!-- HC-2: このコンテナの上に要素を重ねない。プレーヤーの外側にのみ情報を置く -->
+        <div id="player-frame" class="player-frame" hidden>
+          <div id="player-mount"></div>
+        </div>
+
+        <!-- 配信前・終了時にプレーヤーの代わりに出す（REQ-105） -->
+        <div id="placeholder" class="placeholder" hidden></div>
+
+        <!-- REQ-127: 自動再生がブロックされたときに無言で止まらないようにする -->
+        <p id="resume-banner" class="banner banner-action" hidden>
+          <span>配信が切り替わりました。</span>
+          <button id="resume-button" type="button">再生する</button>
+        </p>
+
+        <div id="headline-row" class="headline-row" hidden>
+          <span id="live-badge" class="live-badge" hidden>LIVE</span>
+          <span id="headline" class="headline"></span>
+        </div>
+
+        <p id="event-notice" class="notice" hidden></p>
+
+        <!-- REQ-104: 埋め込みが表示できない環境からの脱出路。常に併置する -->
+        <p class="direct">
+          <a id="direct-link" href="#" target="_blank" rel="noopener noreferrer" hidden>
+            映像が表示されない場合は YouTube で直接開く
+          </a>
+        </p>
+
+        <!-- REQ-106: プログラムと「いまここ」 -->
+        <section id="program" class="program" hidden>
+          <h3 class="program-title">プログラム</h3>
+          <table class="program-table">
+            <thead>
+              <tr>
+                <th scope="col" class="program-col-time">時刻</th>
+                <th scope="col">内容</th>
+              </tr>
+            </thead>
+            <tbody id="program-body"></tbody>
+          </table>
+        </section>
+      </section>
+
+      <!-- REQ-133: キャッシュも無い場合の退避表示 -->
+      <section id="fatal" class="fatal" hidden>
+        <h2>配信情報を取得できませんでした</h2>
+        <p>時間をおいて再読み込みしてください。</p>
+        <p id="fatal-contact" class="fatal-contact"></p>
+        <p id="fatal-official"></p>
+      </section>
+
+      <!-- REQ-108 / REQ-109: 常時表示 -->
+      <aside class="cautions">
+        <p>配信は実際の進行より数十秒遅れて表示されます。</p>
+        <p>録画・スクリーンショット・SNS 等への転載は禁止します。</p>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <p id="official-link-row"></p>
+    </footer>
+
+    <script type="module" src="./assets/js/view.js"></script>
+  </body>
+</html>
