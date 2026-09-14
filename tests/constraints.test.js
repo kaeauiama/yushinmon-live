@@ -186,6 +186,22 @@ test("HC-2: YouTube プレーヤーを覆う要素を置かない", () => {
   }
 });
 
+test("HC-2: プレーヤーの入れ物の中には、プレーヤー以外を入れない", () => {
+  // 中断中の帯などの案内は、プレーヤーに重ねず外側に置く。
+  // 入れ物の中身が差し込み用の要素 1 つだけであることを確かめる。
+  const html = readCode(path.join(ROOT, "index.html"));
+  assert.match(
+    html,
+    /<div id="player-frame"[^>]*>\s*<div id="player-mount"><\/div>\s*<\/div>/,
+    "player-frame の中に player-mount 以外の要素があります（HC-2）"
+  );
+
+  const noticeAt = html.indexOf('id="paused-notice"');
+  const frameAt = html.indexOf('id="player-frame"');
+  assert.ok(noticeAt !== -1, "中断中の帯（paused-notice）が見つかりません");
+  assert.ok(noticeAt < frameAt, "中断中の帯はプレーヤーの外側（上）に置きます");
+});
+
 function cssBlocks(css) {
   const blocks = [];
   const pattern = /([^{}]+)\{([^{}]*)\}/g;

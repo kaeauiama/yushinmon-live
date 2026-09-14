@@ -55,9 +55,12 @@ export class LivePlayer {
    * @param {{
    *   onAutoplayBlocked?: () => void,
    *   onPlaying?: () => void,
+   *   onPlaybackChange?: (playing: boolean) => void,
    *   onEnded?: () => void,
    *   onError?: (code: number) => void,
    * }} [handlers]
+   *   onPlaying は「再生が始まった（読み込み中を含む）」、
+   *   onPlaybackChange は「実際に映像が流れているか（読み込み中は false）」を知らせる。
    */
   constructor(container, handlers = {}) {
     this.container = container;
@@ -104,6 +107,7 @@ export class LivePlayer {
       events: {
         onStateChange: (event) => this.#handleStateChange(event.data),
         onError: (event) => {
+          this.#notifyPlayback(false);
           if (this.handlers.onError) this.handlers.onError(event.data);
         },
       },
@@ -127,9 +131,16 @@ export class LivePlayer {
     this.player = null;
     this.videoId = null;
     this.container.replaceChildren();
+    this.#notifyPlayback(false);
+  }
+
+  #notifyPlayback(playing) {
+    if (this.handlers.onPlaybackChange) this.handlers.onPlaybackChange(playing);
   }
 
   #handleStateChange(state) {
+    this.#notifyPlayback(state === PLAYER_STATE.PLAYING);
+
     if (state === PLAYER_STATE.PLAYING || state === PLAYER_STATE.BUFFERING) {
       clearTimeout(this.autoplayTimer);
       this.autoplayTimer = null;

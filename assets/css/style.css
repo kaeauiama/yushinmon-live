@@ -199,10 +199,6 @@ body {
   word-break: break-word;
 }
 
-.headline.is-paused {
-  color: var(--color-live);
-}
-
 .notice {
   margin: 6px 0 0;
   padding: 5px 7px;
@@ -226,6 +222,21 @@ body {
   background: var(--color-warn-bg);
   color: var(--color-warn-text);
   border: 1px solid var(--color-warn-border);
+}
+
+/*
+  中断中の帯（REQ-129）。警告色（赤・黄）を使わず、落ち着いた見た目にする。
+  映像が戻れば自動で消えるので、強く主張させる必要はない。
+*/
+.banner-info {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-text-weak);
+}
+
+.paused-notice {
+  margin: 0 0 5px;
 }
 
 .banner-action {

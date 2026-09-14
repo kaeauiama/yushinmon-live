@@ -12,6 +12,7 @@ import { parseVideoId, watchUrl } from "./youtube.js";
 import { normalizeProgram, clampIndex } from "./program.js";
 import { saveSnapshot, loadSnapshot, formatSavedAt } from "./cache.js";
 import { ConnectionWatcher } from "./connection.js";
+import { PausedNotice } from "./paused-notice.js";
 
 /** 起動後この時間データが届かなければキャッシュ表示に切り替える（ms） */
 const FIRST_DATA_TIMEOUT_MS = 6000;
@@ -23,6 +24,7 @@ const el = {
   court: document.getElementById("court"),
   courtTabs: document.getElementById("court-tabs"),
   courtName: document.getElementById("court-name"),
+  pausedNotice: document.getElementById("paused-notice"),
   playerFrame: document.getElementById("player-frame"),
   playerMount: document.getElementById("player-mount"),
   placeholder: document.getElementById("placeholder"),
@@ -52,9 +54,17 @@ const state = {
   selectedCourtKey: null,
 };
 
+/** 中断中の帯（REQ-129）。出す条件は PausedNotice を参照 */
+const pausedNotice = new PausedNotice({
+  onChange: (visible) => {
+    el.pausedNotice.hidden = !visible;
+  },
+});
+
 const player = new LivePlayer(el.playerMount, {
   onAutoplayBlocked: () => show(el.resumeBanner),
   onPlaying: () => hide(el.resumeBanner),
+  onPlaybackChange: (playing) => pausedNotice.setPlaying(playing),
 });
 
 const connection = new ConnectionWatcher({
@@ -191,6 +201,9 @@ function render(event) {
 
   const videoId = parseVideoId(court.videoId);
   const stateName = court.state || "before";
+
+  // 帯はプレーヤーを出しているときだけ意味がある（配信前・終了・URL 未設定では案内が出る）
+  pausedNotice.setPaused(stateName === "paused" && videoId !== null);
 
   if (stateName === "live" || stateName === "paused") {
     renderStreaming(court, videoId, stateName);
@@ -330,12 +343,9 @@ function renderPlaceholder(text) {
 function setHeadline(headline, stateName) {
   const text = (headline || "").trim();
   el.liveBadge.hidden = stateName !== "live";
+  // 中断中でもテロップの見た目は変えず、理由も補わない。
+  // 理由は機材トラブルとは限らないので、伝えたい場合はスタッフがテロップに書く（REQ-129）
   el.headline.textContent = text;
-  el.headline.classList.toggle("is-paused", stateName === "paused");
-
-  if (stateName === "paused" && text === "") {
-    el.headline.textContent = "機材トラブルのため復旧作業中です";
-  }
   el.headlineRow.hidden = el.headline.textContent === "" && stateName !== "live";
 }
 

@@ -30,6 +30,15 @@
         <div id="court-tabs" class="court-tabs" role="tablist" hidden></div>
         <h2 id="court-name" class="court-name"></h2>
 
+        <!--
+          REQ-129: 中断中の帯。プレーヤーに重ねず、すぐ上に置く（HC-2）。
+          「中断中にする」が押されていて、かつ実際に映像が止まっているときだけ出る。
+          理由は決めつけない（伝えたい理由はテロップに書く）。
+        -->
+        <p id="paused-notice" class="banner banner-info paused-notice" role="status" hidden>
+          ただいま配信を一時中断しています。再開まで、このままお待ちください。
+        </p>
+
         <!-- HC-2: このコンテナの上に要素を重ねない。プレーヤーの外側にのみ情報を置く -->
         <div id="player-frame" class="player-frame" hidden>
           <div id="player-mount"></div>
