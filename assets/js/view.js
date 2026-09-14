@@ -11,6 +11,7 @@ import { LivePlayer } from "./player.js";
 import { parseVideoId, watchUrl } from "./youtube.js";
 import { normalizeProgram, clampIndex } from "./program.js";
 import { saveSnapshot, loadSnapshot, formatSavedAt } from "./cache.js";
+import { ConnectionWatcher } from "./connection.js";
 
 /** 起動後この時間データが届かなければキャッシュ表示に切り替える（ms） */
 const FIRST_DATA_TIMEOUT_MS = 6000;
@@ -42,7 +43,8 @@ const el = {
 
 const state = {
   receivedLiveData: false,
-  connected: true,
+  /** 「通信が不安定です」を出すか。判定は ConnectionWatcher に任せる（REQ-128） */
+  connectionWarning: false,
   staleSavedAt: null,
   /** 直近に描画したイベント。タブを押したときの再描画に使う */
   lastEvent: null,
@@ -53,6 +55,13 @@ const state = {
 const player = new LivePlayer(el.playerMount, {
   onAutoplayBlocked: () => show(el.resumeBanner),
   onPlaying: () => hide(el.resumeBanner),
+});
+
+const connection = new ConnectionWatcher({
+  onWarningChange: (warning) => {
+    state.connectionWarning = warning;
+    updateStalenessBanner();
+  },
 });
 
 el.resumeButton.addEventListener("click", () => {
@@ -93,8 +102,8 @@ async function start() {
         updateStalenessBanner();
       },
       onConnectionChange: (connected) => {
-        state.connected = connected;
-        updateStalenessBanner();
+        // 生の接続状態を直接表示に使わない。開いた直後は必ず一度 false が来るため
+        connection.update(connected);
       },
       onForceReload: () => window.location.reload(),
     });
@@ -338,7 +347,7 @@ function updateStalenessBanner() {
     show(el.staleness);
     return;
   }
-  if (!state.connected) {
+  if (state.connectionWarning) {
     el.staleness.textContent = "通信が不安定です。表示が最新でない場合があります。";
     show(el.staleness);
     return;
