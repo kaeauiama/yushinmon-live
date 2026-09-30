@@ -16,6 +16,7 @@ import { initFirebase } from "../../assets/js/firebase-app.js";
 import { LivePlayer } from "../../assets/js/player.js";
 import { parseVideoId, watchUrl } from "../../assets/js/youtube.js";
 import { normalizeProgram, moveRow, clampIndex, nextIndex } from "../../assets/js/program.js";
+import { isValidEventId, describeEventIdProblem } from "../../assets/js/event-id.js";
 import { createAuth, describeAuthError } from "./auth.js";
 
 /** プレビューを更新するまでの待ち時間（ms）。打鍵のたびに読み込まないため */
@@ -23,6 +24,18 @@ const PREVIEW_DEBOUNCE_MS = 500;
 
 /** 入力欄と RTDB のフィールドの対応 */
 const FIELDS = [
+  // scope: "event" は events/{id}/... 、"court" は events/{id}/courts/{n}/... に書く
+  { id: "event-title-input", key: "title", kind: "text", label: "大会名", scope: "event" },
+  {
+    id: "event-date",
+    key: "date",
+    kind: "text",
+    label: "開催日",
+    scope: "event",
+    // セキュリティルールが YYYY-MM-DD を必須にしているため、空欄のときは書き込まない
+    skipWhenEmpty: true,
+  },
+  { id: "event-notice", key: "notice", kind: "text", label: "お知らせ", scope: "event" },
   { id: "court-name", key: "name", kind: "text", label: "コート名" },
   { id: "video-url", key: "videoId", kind: "video", label: "本番の配信 URL" },
   { id: "backup-url", key: "backupVideoId", kind: "video", label: "予備の配信 URL" },
@@ -52,6 +65,13 @@ const dom = {
   eventMissing: el("event-missing"),
   eventSelect: el("event-select"),
   eventApply: el("event-apply"),
+  newEventId: el("new-event-id"),
+  newEventIdStatus: el("new-event-id-status"),
+  newEventTitle: el("new-event-title"),
+  newEventDate: el("new-event-date"),
+  eventCreate: el("event-create"),
+  deleteEventSelect: el("delete-event-select"),
+  eventDelete: el("event-delete"),
   previewFrame: el("preview-frame"),
   previewMount: el("preview-mount"),
   previewEmpty: el("preview-empty"),
@@ -99,6 +119,8 @@ const state = {
   dirty: new Set(),
   previewTimer: null,
   previewId: null,
+  /** 直近に取得したイベント一覧。切替用と削除用の選択肢を作るのに使う */
+  eventsSnapshot: null,
   /** プログラムの編集中の写し。保存するまで RTDB には書かない */
   programRows: [],
   programIndex: -1,
@@ -192,22 +214,33 @@ function subscribe() {
   });
 
   onValue(ref(state.db, "events"), (snapshot) => {
-    fillEventSelect(snapshot.val());
+    state.eventsSnapshot = snapshot.val();
+    fillEventSelects();
   });
 }
 
-function fillEventSelect(events) {
+function fillEventSelects() {
+  const events = state.eventsSnapshot;
   const ids = events ? Object.keys(events) : [];
-  dom.eventSelect.replaceChildren(
-    ...ids.map((id) => {
-      const option = document.createElement("option");
-      option.value = id;
-      const title = events[id] && events[id].title;
-      option.textContent = title ? `${title}（${id}）` : id;
-      return option;
-    })
-  );
+
+  const label = (id) => {
+    const title = events[id] && events[id].title;
+    return title ? `${title}（${id}）` : id;
+  };
+  const option = (id) => {
+    const node = document.createElement("option");
+    node.value = id;
+    node.textContent = label(id);
+    return node;
+  };
+
+  dom.eventSelect.replaceChildren(...ids.map(option));
   if (state.eventId) dom.eventSelect.value = state.eventId;
+
+  // 削除用には配信中のイベントを出さない。選べなければ誤って消すこともない
+  const deletable = ids.filter((id) => id !== state.eventId);
+  dom.deleteEventSelect.replaceChildren(...deletable.map(option));
+  dom.eventDelete.disabled = deletable.length === 0;
 }
 
 function applyEvent(event) {
@@ -232,12 +265,12 @@ function applyEvent(event) {
   renderCourtTabs(entries);
 
   dom.eventTitle.textContent = event.title || "";
-  if (state.eventId) dom.eventSelect.value = state.eventId;
+  fillEventSelects();
 
   // 打ちかけの入力は上書きしない（他端末からの更新で消えないように）
   for (const field of FIELDS) {
     if (state.dirty.has(field.id)) continue;
-    el(field.id).value = toDisplay(field, state.court);
+    el(field.id).value = toDisplay(field, field.scope === "event" ? event : state.court);
     refreshFieldStatus(field);
   }
 
@@ -386,6 +419,9 @@ function wireConsole() {
   dom.saveButton.addEventListener("click", save);
   dom.swapButton.addEventListener("click", swapBackup);
   dom.eventApply.addEventListener("click", applyActiveEvent);
+  dom.eventCreate.addEventListener("click", createEvent);
+  dom.eventDelete.addEventListener("click", deleteEvent);
+  dom.newEventId.addEventListener("input", refreshNewEventIdStatus);
   dom.forceReloadButton.addEventListener("click", forceReload);
 
   window.addEventListener("beforeunload", (event) => {
@@ -609,10 +645,12 @@ async function save() {
   const updates = {};
   for (const field of FIELDS) {
     const raw = el(field.id).value;
+    const base = field.scope === "event" ? `events/${state.eventId}` : courtPath();
+
     if (field.kind === "video") {
       const trimmed = raw.trim();
       if (trimmed === "") {
-        updates[`${courtPath()}/${field.key}`] = "";
+        updates[`${base}/${field.key}`] = "";
         continue;
       }
       const videoId = parseVideoId(trimmed);
@@ -622,9 +660,12 @@ async function save() {
         el(field.id).focus();
         return;
       }
-      updates[`${courtPath()}/${field.key}`] = videoId;
+      updates[`${base}/${field.key}`] = videoId;
     } else {
-      updates[`${courtPath()}/${field.key}`] = raw.trim();
+      const trimmed = raw.trim();
+      // 開催日は形式が決まっているので、空欄なら手を触れない（既存の値も壊さない）
+      if (trimmed === "" && field.skipWhenEmpty) continue;
+      updates[`${base}/${field.key}`] = trimmed;
     }
   }
 
@@ -663,6 +704,130 @@ async function applyActiveEvent() {
   try {
     await set(ref(state.db, "_activeEvent_"), next);
     toast("配信中のイベントを切り替えました");
+  } catch (error) {
+    reportWriteError(error);
+  }
+}
+
+// ---------------------------------------------------------------- イベント管理
+
+function refreshNewEventIdStatus() {
+  const raw = dom.newEventId.value.trim();
+  const status = dom.newEventIdStatus;
+
+  if (raw === "") {
+    status.textContent = "";
+    status.className = "field-status";
+    return;
+  }
+
+  const problem = describeEventIdProblem(raw, state.eventsSnapshot);
+  status.textContent = problem || "この ID で作れます。";
+  status.className = problem ? "field-status is-ng" : "field-status is-ok";
+}
+
+/**
+ * 新しいイベントを作る（REQ-152）。
+ *
+ * 既存のイベントは絶対に上書きしない。作成しても `_activeEvent_` は変えないので、
+ * 視聴ページの表示は切り替わらない（配信するときに明示的に切り替える）。
+ */
+async function createEvent() {
+  const id = dom.newEventId.value.trim();
+  const title = dom.newEventTitle.value.trim();
+  const date = dom.newEventDate.value.trim();
+
+  const idProblem = describeEventIdProblem(id, state.eventsSnapshot);
+  if (idProblem) {
+    showConsoleError(idProblem);
+    dom.newEventId.focus();
+    return;
+  }
+  if (title === "") {
+    showConsoleError("大会名を入力してください。");
+    dom.newEventTitle.focus();
+    return;
+  }
+  // セキュリティルールが YYYY-MM-DD を必須にしているので、ここで確実に満たす
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    showConsoleError("開催日を入力してください。");
+    dom.newEventDate.focus();
+    return;
+  }
+
+  const { ref, get, set, serverTimestamp } = state.database;
+
+  try {
+    // 上書き防止。書き込む直前に、その ID が空いていることを必ず確かめる
+    const existing = await get(ref(state.db, `events/${id}`));
+    if (existing.exists()) {
+      showConsoleError(`イベント "${id}" は既にあります。上書きしていません。`);
+      return;
+    }
+
+    await set(ref(state.db, `events/${id}`), {
+      title,
+      date,
+      notice: "",
+      courts: [blankCourt(0)],
+      updatedAt: serverTimestamp(),
+    });
+
+    dom.newEventId.value = "";
+    dom.newEventTitle.value = "";
+    dom.newEventDate.value = "";
+    refreshNewEventIdStatus();
+    dom.consoleError.hidden = true;
+    toast(`イベント「${title}」を作りました`);
+  } catch (error) {
+    reportWriteError(error);
+  }
+}
+
+/**
+ * イベントを削除する（REQ-152）。取り消せないので、二段構えで確かめる。
+ * 配信中のイベントは選択肢に出していないため、そもそも選べない。
+ */
+async function deleteEvent() {
+  const id = dom.deleteEventSelect.value;
+  if (!id) return;
+
+  if (id === state.eventId) {
+    showConsoleError("配信中のイベントは削除できません。先に別のイベントを配信中にしてください。");
+    return;
+  }
+
+  const { ref, get, set } = state.database;
+
+  let summary = "";
+  let title = id;
+  try {
+    const snapshot = await get(ref(state.db, `events/${id}`));
+    if (!snapshot.exists()) {
+      showConsoleError(`イベント "${id}" は見つかりませんでした。`);
+      return;
+    }
+    const event = snapshot.val();
+    title = event.title || id;
+    const courts = courtEntries(event);
+    const rows = courts.reduce((total, [, court]) => total + normalizeProgram(court.program).length, 0);
+    summary = `コート ${courts.length} 個 / プログラム ${rows} 行`;
+  } catch (error) {
+    reportWriteError(error);
+    return;
+  }
+
+  // 何を消すのかを数で見せてから確かめる
+  const message =
+    `イベント「${title}」（${id}）を削除します。\n${summary}\n\n` +
+    `削除すると元に戻せません。よろしいですか？`;
+  if (!confirm(message)) return;
+  if (!confirm(`本当に「${title}」を削除しますか？この操作は取り消せません。`)) return;
+
+  try {
+    await set(ref(state.db, `events/${id}`), null);
+    dom.consoleError.hidden = true;
+    toast(`イベント「${title}」を削除しました`);
   } catch (error) {
     reportWriteError(error);
   }
@@ -714,8 +879,8 @@ function reportWriteError(error) {
 
 // ---------------------------------------------------------------- 表示更新
 
-function toDisplay(field, court) {
-  const value = court[field.key];
+function toDisplay(field, source) {
+  const value = source[field.key];
   if (field.kind === "video") return watchUrl(value) || "";
   return value || "";
 }

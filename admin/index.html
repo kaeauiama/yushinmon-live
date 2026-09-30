@@ -60,7 +60,69 @@
           <p class="hint">
             視聴ページに表示されるイベントが切り替わります。大会当日には触らないでください。
           </p>
+
+          <label class="field">
+            <span class="field-label">大会名</span>
+            <input id="event-title-input" type="text" maxlength="100" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-label">開催日</span>
+            <input id="event-date" type="date" />
+          </label>
+          <label class="field">
+            <span class="field-label">お知らせ（全コート共通。空なら表示しない）</span>
+            <input id="event-notice" type="text" maxlength="300" autocomplete="off" />
+          </label>
+          <p class="hint">大会名・開催日・お知らせは「保存」を押すと反映されます。</p>
         </div>
+
+        <!-- 大会当日に触る場所ではないので、既定で閉じておく（REQ-152） -->
+        <details class="panel danger-zone">
+          <summary>イベントの作成・削除（大会前の準備用）</summary>
+
+          <h3 class="panel-subtitle">新しいイベントを作る</h3>
+          <label class="field">
+            <span class="field-label">イベント ID（英小文字・数字・ハイフン）</span>
+            <input
+              id="new-event-id"
+              type="text"
+              maxlength="40"
+              autocomplete="off"
+              placeholder="2027-spring"
+            />
+          </label>
+          <p id="new-event-id-status" class="field-status"></p>
+          <label class="field">
+            <span class="field-label">大会名</span>
+            <input id="new-event-title" type="text" maxlength="100" autocomplete="off" />
+          </label>
+          <label class="field">
+            <span class="field-label">開催日</span>
+            <input id="new-event-date" type="date" />
+          </label>
+          <button id="event-create" type="button" class="btn btn-state btn-wide">
+            このイベントを作る
+          </button>
+          <p class="hint">
+            第1コートが 1 つだけ、状態「配信前」で作られます。<br />
+            <strong>作っただけでは視聴ページには出ません。</strong>
+            配信するときに「選んだイベントを配信中にする」を押してください。<br />
+            同じ ID のイベントが既にある場合は作成しません（上書きしません）。
+          </p>
+
+          <h3 class="panel-subtitle">イベントを削除する</h3>
+          <label class="field">
+            <span class="field-label">削除するイベント</span>
+            <select id="delete-event-select"></select>
+          </label>
+          <button id="event-delete" type="button" class="btn btn-danger btn-wide">
+            選んだイベントを削除する
+          </button>
+          <p class="hint">
+            <strong>削除すると元に戻せません。</strong>
+            配信中のイベントは削除できません（先に別のイベントを配信中にしてください）。
+          </p>
+        </details>
 
         <div class="panel">
           <h2 class="panel-title">コート</h2>
