@@ -9,7 +9,7 @@ import { loadConfig } from "./config.js";
 import { createStore } from "./store.js";
 import { LivePlayer } from "./player.js";
 import { parseVideoId, watchUrl } from "./youtube.js";
-import { normalizeProgram, clampIndex } from "./program.js";
+import { normalizeProgram, visibleCurrentIndex } from "./program.js";
 import { saveSnapshot, loadSnapshot, formatSavedAt } from "./cache.js";
 import { ConnectionWatcher } from "./connection.js";
 import { PausedNotice } from "./paused-notice.js";
@@ -304,7 +304,8 @@ function renderProgram(court) {
     return;
   }
 
-  const current = clampIndex(court.currentProgramIndex, rows.length);
+  // 配信前・終了後は「いま」を出さない（戻し忘れで古い行が残るのを防ぐ）
+  const current = visibleCurrentIndex(court.state, court.currentProgramIndex, rows.length);
 
   el.programBody.replaceChildren(
     ...rows.map((row, index) => {

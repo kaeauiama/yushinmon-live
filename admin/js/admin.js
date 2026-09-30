@@ -66,6 +66,7 @@ const dom = {
   programEmpty: el("program-empty"),
   programAdd: el("program-add"),
   programNext: el("program-next"),
+  programClear: el("program-clear"),
   programLocked: el("program-locked"),
   courtTabs: el("admin-court-tabs"),
   courtAdd: el("court-add"),
@@ -378,6 +379,7 @@ function wireConsole() {
 
   dom.programAdd.addEventListener("click", addProgramRow);
   dom.programNext.addEventListener("click", advanceProgram);
+  dom.programClear.addEventListener("click", () => setProgramIndex(-1));
   dom.courtAdd.addEventListener("click", addCourt);
   dom.courtRemove.addEventListener("click", removeCourt);
 
@@ -521,6 +523,7 @@ function markProgramDirty() {
 function refreshProgramLock() {
   const locked = state.dirty.has("program");
   dom.programNext.disabled = locked;
+  dom.programClear.disabled = locked;
   for (const button of dom.programRows.querySelectorAll(".act-here")) {
     button.disabled = locked;
   }

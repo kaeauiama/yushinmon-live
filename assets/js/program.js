@@ -66,6 +66,27 @@ export function clampIndex(index, length) {
 }
 
 /**
+ * 「いま」の目印を実際に表示する添字を返す（REQ-106）。
+ *
+ * 配信していない状態（`before` / `ended`）では、常に -1（表示しない）。
+ * 大会当日は運営がてんやわんやで、配信の終了後に「いま」を戻し忘れることがある。
+ * そのとき古い行が「いま」として残り続けると誤解を招くので、
+ * **配信していないときは「いま」を出さない**ことで事故を防ぐ。
+ *
+ * 「いま」を出したくない場合は、管理画面から `currentProgramIndex` を -1 にする
+ * （管理画面の「『いま』を消す」）。
+ *
+ * @param {unknown} stateName コートの状態（before / live / paused / ended）
+ * @param {unknown} index `currentProgramIndex`
+ * @param {number} length プログラムの行数
+ * @returns {number} 表示する添字。表示しないなら -1
+ */
+export function visibleCurrentIndex(stateName, index, length) {
+  if (stateName !== "live" && stateName !== "paused") return -1;
+  return clampIndex(index, length);
+}
+
+/**
  * 「次の種目へ進む」の移動先を返す。
  * 未指定なら先頭へ。最終行では止まる（一周させない）。
  *

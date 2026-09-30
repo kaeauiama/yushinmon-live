@@ -226,6 +226,23 @@ test("hidden 属性が display 指定つきのクラスに負けないこと", (
   );
 });
 
+test("REQ-151: 管理ページから視聴ページへのリンクがある（逆向きは置かない）", () => {
+  const admin = read(path.join(ROOT, "admin/index.html"));
+  assert.match(
+    admin,
+    /<a[^>]+href="\.\.\/"[^>]*>/,
+    "管理ページに視聴ページへのリンクがありません（REQ-151）"
+  );
+
+  // 視聴ページから管理ページへは誘導しない（URL を知っている人だけが開く運用のため）
+  const viewer = read(path.join(ROOT, "index.html"));
+  assert.equal(
+    /href="[^"]*admin/.test(viewer),
+    false,
+    "視聴ページに管理ページへのリンクがあります（REQ-151）"
+  );
+});
+
 test("REQ-110: 視聴ページに noindex がある", () => {
   const html = read(path.join(ROOT, "index.html"));
   assert.match(html, /<meta\s+name=["']robots["']\s+content=["'][^"']*noindex/i);

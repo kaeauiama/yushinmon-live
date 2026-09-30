@@ -78,7 +78,7 @@
 | `backupVideoId` | string | 予備配信の動画 ID。「予備に切替」で `videoId` と入れ替える |
 | `archiveVideoId` | string | 終了後に案内するアーカイブの動画 ID（任意） |
 | `scheduledStartText` | string | `before` 状態で表示する開始予定の文言 |
-| `currentProgramIndex` | number | ハイライトする `program` の添字。`-1` で未指定 |
+| `currentProgramIndex` | number | ハイライトする `program` の添字。`-1` で「いま」を表示しない（管理画面の「『いま』を消す」）。なお `state` が `before` / `ended` のときは、この値によらず表示しない（REQ-106） |
 | `program` | list | 下表。`null`（キー自体が無い）ならプログラム表を丸ごと非表示 |
 
 ### `program` の各要素

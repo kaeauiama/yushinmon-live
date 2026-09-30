@@ -1,7 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { normalizeProgram, moveRow, clampIndex, nextIndex } from "../assets/js/program.js";
+import {
+  normalizeProgram,
+  moveRow,
+  clampIndex,
+  nextIndex,
+  visibleCurrentIndex,
+} from "../assets/js/program.js";
 
 const rows = [
   { time: "10:30", content: "開会式" },
@@ -83,4 +89,34 @@ test("nextIndex: 未指定なら先頭、最終行では止まる", () => {
   assert.equal(nextIndex(1, 3), 2);
   assert.equal(nextIndex(2, 3), 2);
   assert.equal(nextIndex(0, 0), -1);
+});
+
+// ---------------------------------------------------------------------------
+// 「いま」を実際に出すかどうか（REQ-106）
+//
+// 大会当日は運営がてんやわんやで、配信の終了後に「いま」を戻し忘れることがある。
+// 古い行が「いま」として残り続けないようにする。
+
+test("visibleCurrentIndex: 配信中・中断中は指定された行を出す", () => {
+  assert.equal(visibleCurrentIndex("live", 1, 3), 1);
+  assert.equal(visibleCurrentIndex("paused", 2, 3), 2);
+});
+
+test("visibleCurrentIndex: 配信前・終了後は出さない（戻し忘れ対策）", () => {
+  assert.equal(visibleCurrentIndex("before", 1, 3), -1);
+  assert.equal(visibleCurrentIndex("ended", 1, 3), -1);
+});
+
+test("visibleCurrentIndex: 状態が未設定・未知の値なら出さない", () => {
+  assert.equal(visibleCurrentIndex(undefined, 1, 3), -1);
+  assert.equal(visibleCurrentIndex(null, 1, 3), -1);
+  assert.equal(visibleCurrentIndex("", 1, 3), -1);
+  assert.equal(visibleCurrentIndex("LIVE", 1, 3), -1);
+});
+
+test("visibleCurrentIndex: 配信中でも -1 や範囲外なら出さない（「いま」を消す）", () => {
+  assert.equal(visibleCurrentIndex("live", -1, 3), -1);
+  assert.equal(visibleCurrentIndex("live", 3, 3), -1);
+  assert.equal(visibleCurrentIndex("live", null, 3), -1);
+  assert.equal(visibleCurrentIndex("live", 0, 0), -1);
 });

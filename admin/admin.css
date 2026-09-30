@@ -323,3 +323,15 @@ body {
   border-color: var(--color-live);
   color: var(--color-live);
 }
+
+/* ---- ヘッダーの視聴ページリンク（REQ-151） ---- */
+
+.site-header-link {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+}
+
+.site-header-link a {
+  color: #fff;
+  text-decoration: underline;
+}

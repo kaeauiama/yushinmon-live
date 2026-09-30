@@ -14,6 +14,10 @@
     <header class="site-header">
       <h1 class="site-title">管理画面</h1>
       <p id="event-title" class="event-title"></p>
+      <!-- 管理 → 視聴の一方向リンク（REQ-151）。視聴ページ側には管理へのリンクを置かない -->
+      <p class="site-header-link">
+        <a href="../" target="_blank" rel="noopener noreferrer">視聴ページを開く（別タブ）</a>
+      </p>
     </header>
 
     <main class="wrap">
@@ -151,6 +155,13 @@
           </button>
           <p class="hint">
             視聴ページの「いま」の目印が 1 つ下がります。押した時点ですぐ反映されます。
+          </p>
+          <button id="program-clear" type="button" class="btn btn-state btn-wide">
+            「いま」を消す
+          </button>
+          <p class="hint">
+            「いま」の目印を出さなくなります。押した時点ですぐ反映されます。<br />
+            配信前と終了後は、この操作をしなくても自動で消えます。
           </p>
           <p id="program-locked" class="field-status is-ng" hidden></p>
 
